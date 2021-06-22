@@ -29,6 +29,7 @@
     "onCommand:references-view.findReferences",
     "onCommand:references-view.findImplementations",
     "onCommand:references-view.showCallHierarchy",
+    "onCommand:references-view.showTypeHierarchy",
     "onCommand:editor.action.showReferences",
     "onView:references-view.tree"
   ],
@@ -149,6 +150,43 @@
         "icon": "$(close)"
       },
       {
+        "command": "references-view.showTypeHierarchy",
+        "title": "Show Type Hierarchy in Reference-View",
+        "category": "Types"
+      },
+      {
+        "command": "references-view.showSupertypes",
+        "title": "Show Supertypes",
+        "category": "Types",
+        "enablement": "references-view.typeHierarchyView != supertype",
+        "icon": "$(type-hierarchy-super)"
+      },
+      {
+        "command": "references-view.showSubtypes",
+        "title": "Show Subtypes",
+        "category": "Types",
+        "enablement": "references-view.typeHierarchyView != subtype",
+        "icon": "$(type-hierarchy-sub)"
+      },
+      {
+        "command": "references-view.showClassView",
+        "title": "Show Class View",
+        "category": "Types",
+        "enablement": "references-view.typeHierarchyView != class && references-view.classViewSupport",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "references-view.removeTypeItem",
+        "title": "Dismiss",
+        "category": "Types",
+        "icon": "$(close)"
+      },
+      {
+        "command": "references-view.basedOnType",
+        "title": "Base on this Type",
+        "category": "Types"
+      },
+      {
         "command": "references-view.next",
         "title": "Go to Next Reference",
         "enablement": "references-view.canNavigate"
@@ -175,6 +213,11 @@
           "command": "references-view.showCallHierarchy",
           "when": "editorHasCallHierarchyProvider",
           "group": "0_navigation@3"
+        },
+        {
+          "command": "references-view.showTypeHierarchy",
+          "when": "true",
+          "group": "0_navigation@4"
         }
       ],
       "view/title": [
@@ -202,6 +245,21 @@
           "command": "references-view.showIncomingCalls",
           "group": "navigation@1",
           "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == callHierarchy &&  references-view.callHierarchyMode == showOutgoing"
+        },
+        {
+          "command": "references-view.showSupertypes",
+          "group": "navigation@0",
+          "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == typeHierarchy"
+        },
+        {
+          "command": "references-view.showSubtypes",
+          "group": "navigation@1",
+          "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == typeHierarchy"
+        },
+        {
+          "command": "references-view.showClassView",
+          "group": "navigation@-1",
+          "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == typeHierarchy && references-view.classViewSupport"
         }
       ],
       "view/item/context": [
@@ -214,6 +272,11 @@
           "command": "references-view.removeCallItem",
           "group": "inline",
           "when": "view == references-view.tree && viewItem == call-item"
+        },
+        {
+          "command": "references-view.removeTypeItem",
+          "group": "inline",
+          "when": "view == references-view.tree && viewItem == type-item"
         },
         {
           "command": "references-view.refind",
@@ -229,6 +292,11 @@
           "command": "references-view.removeCallItem",
           "group": "1",
           "when": "view == references-view.tree && viewItem == call-item"
+        },
+        {
+          "command": "references-view.removeTypeItem",
+          "group": "1",
+          "when": "view == references-view.tree && viewItem == type-item"
         },
         {
           "command": "references-view.refind",
@@ -259,6 +327,11 @@
           "command": "references-view.showIncomingCalls",
           "group": "1",
           "when": "view == references-view.tree && viewItem == call-item"
+        },
+        {
+          "command": "references-view.basedOnType",
+          "group": "1",
+          "when": "view == references-view.tree && viewItem == type-item"
         }
       ],
       "commandPalette": [
@@ -268,6 +341,10 @@
         },
         {
           "command": "references-view.removeCallItem",
+          "when": "never"
+        },
+        {
+          "command": "references-view.removeTypeItem",
           "when": "never"
         },
         {
@@ -312,6 +389,10 @@
         },
         {
           "command": "references-view.prev",
+          "when": "never"
+        },
+        {
+          "command": "references-view.basedOnType",
           "when": "never"
         }
       ]
