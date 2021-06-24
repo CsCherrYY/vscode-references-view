@@ -28,13 +28,13 @@ export class TypesTreeInput implements SymbolTreeInput<TypeItem> {
 		} else if (typeHierarchyContext.view === TypeHierarchyView.Class) {
 			this.title = 'Class Hierarchy';
 		} else {
-			this.title = 'Invalid Type Hierarchy View'
+			this.title = 'Invalid Type Hierarchy View';
 		}
 		this.items = items;
 	}
 
 	async resolve() {
-		
+
 		const model = new TypesModel(this.typeHierarchyContext.view, this.items ?? []);
 		const provider = new TypeItemDataProvider(model);
 
@@ -74,7 +74,7 @@ export class TypeItem {
 		readonly model: TypesModel,
 		readonly item: TypeHierarchyItem,
 		parent: TypeItem | undefined,
-	) { 
+	) {
 		this.parent = parent;
 	}
 
@@ -96,13 +96,16 @@ class TypesModel implements SymbolItemNavigation<TypeItem>, SymbolItemEditorHigh
 	}
 
 	private async _resolveTypes(type: TypeItem): Promise<TypeItem[]> {
-		if (this.view === TypeHierarchyView.Supertype) {
-			const types = await vscode.commands.executeCommand<TypeHierarchyItem[]>('typeHierarchy.supertypes', type.item, this.cancelTokenSource.token);
-			return types ? types.map(item => new TypeItem(this, item, type)) : [];
-		} else {
-			const types = await vscode.commands.executeCommand<TypeHierarchyItem[]>('typeHierarchy.subtypes', type.item, this.cancelTokenSource.token);
-			return types ? types.map(item => new TypeItem(this, item, type)) : [];
+		let types = (this.view === TypeHierarchyView.Supertype)
+			? await vscode.commands.executeCommand<TypeHierarchyItem[]>('typeHierarchy.supertypes', type.item, this.cancelTokenSource.token)
+			: await vscode.commands.executeCommand<TypeHierarchyItem[]>('typeHierarchy.subtypes', type.item, this.cancelTokenSource.token);
+		if (!types) {
+			return [];
 		}
+		types = types.sort((a, b) => {
+			return (a.kind.toString() === b.kind.toString()) ? a.name.localeCompare(b.name) : b.kind.toString().localeCompare(a.kind.toString());
+		});
+		return types.map(item => new TypeItem(this, item, type));
 	}
 
 	async getTypeChildren(type: TypeItem): Promise<TypeItem[]> {
@@ -160,12 +163,14 @@ class TypeItemDataProvider implements vscode.TreeDataProvider<TypeItem> {
 
 	private readonly _emitter = new vscode.EventEmitter<TypeItem | undefined>();
 	private cancelTokenSource = new vscode.CancellationTokenSource();
+	private prefetch: boolean;
 	readonly onDidChangeTreeData = this._emitter.event;
 
 	private readonly _modelListener: vscode.Disposable;
 
 	constructor(private _model: TypesModel) {
 		this._modelListener = _model.onDidChange(e => this._emitter.fire(e instanceof TypeItem ? e : undefined));
+		this.prefetch = vscode.workspace.getConfiguration().get<boolean>("typeHierarchy.prefetch") || false;
 	}
 
 	dispose(): void {
@@ -173,7 +178,7 @@ class TypeItemDataProvider implements vscode.TreeDataProvider<TypeItem> {
 		this._modelListener.dispose();
 	}
 
-	getTreeItem(element: TypeItem): vscode.TreeItem {
+	async getTreeItem(element: TypeItem): Promise<vscode.TreeItem> {
 
 		const item = new vscode.TreeItem(element.item.name);
 		item.description = element.item.detail;
@@ -187,12 +192,15 @@ class TypeItemDataProvider implements vscode.TreeDataProvider<TypeItem> {
 				<vscode.TextDocumentShowOptions>{ selection: element.item.selectionRange.with({ end: element.item.selectionRange.start }) }
 			]
 		};
-		if (this._model.view === TypeHierarchyView.Class && element.expand) {
+		if ((this._model.view === TypeHierarchyView.Class && element.expand) || this._model.roots.includes(element)) {
 			item.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
 		} else if (element.children?.length === 0) {
 			item.collapsibleState = vscode.TreeItemCollapsibleState.None;
-		} else {
+		} else if (!this.prefetch) {
 			item.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+		} else {
+			element.children = await this.getChildren(element);
+			item.collapsibleState = (element.children.length) ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None;
 		}
 		return item;
 	}

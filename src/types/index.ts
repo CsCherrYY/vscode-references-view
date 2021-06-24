@@ -31,6 +31,9 @@ export function register(tree: SymbolsTree, context: vscode.ExtensionContext): v
 				typeHierarchyContext.view = TypeHierarchyView.Class;
 				typeHierarchyContext.classViewSupport = true;
 			} else {
+				if (typeHierarchyContext.view === TypeHierarchyView.Class) {
+					typeHierarchyContext.view = TypeHierarchyView.Supertype;
+				}
 				typeHierarchyContext.classViewSupport = false;
 			}
 			const input = new TypesTreeInput(location, typeHierarchyContext, items);

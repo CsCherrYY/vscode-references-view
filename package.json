@@ -50,6 +50,11 @@
             "Show references in peek editor.",
             "Show references in separate view."
           ]
+        },
+        "typeHierarchy.prefetch": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable/disable prefetch the content in type hierarchy. Enabling this option will automatically prefetch each type's content and update it's collapse state."
         }
       }
     },
@@ -424,7 +429,7 @@
     "vscode:prepublish": "npm run typecheck && npm run bundle",
     "lint": "eslint src --ext ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "bundle": "esbuild src/extension.ts --bundle --outdir=dist --external:vscode --platform=node --target=node12.18 --minify --sourcemap",
+    "bundle": "esbuild src/extension.ts --bundle --outdir=dist --external:vscode --platform=node --target=node12.18 --sourcemap",
     "ts-compile": "tsc -p tsconfig.json",
     "integration-test": "npm run ts-compile && node ./out/test-integration/runTest.js"
   },
